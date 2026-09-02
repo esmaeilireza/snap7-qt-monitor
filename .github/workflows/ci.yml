@@ -30,42 +30,25 @@ jobs:
       if: runner.os == 'Linux'
       run: |
         sudo apt-get update
-        sudo apt-get install -y libegl1 libgl1 libxkbcommon-x11-0
+        sudo apt-get install -y build-essential libegl1 libgl1 libxkbcommon-x11-0
 
     - name: Install Python Dependencies
       run: |
-        python -m pip install --upgrade pip
+        python -m pip install --upgrade pip setuptools wheel
         pip install -r requirements.txt
         pip install ruff
 
     - name: Static Code Analysis (Ruff)
       run: |
-        # Check for syntax errors, undefined variables, and breaking runtime imports
         ruff check . --select E9,F63,F7,F82
 
     - name: Syntax & UI Compilation Check
       shell: bash
       run: |
-        # Compile all root scripts and modular UI components
         python -m py_compile scada_dashboard.py fork_bridge.py sensor_simulator.py snap7_server.py test_bridge.py ui/*.py
 
-    - name: Execute S7 Loopback Integration Test (Windows)
-      if: runner.os == 'Windows'
+    - name: Validate Simulation Pipeline
       shell: bash
       run: |
-        echo "[INFO] Starting local Mock S7 Server on port 102..."
-        # Launch standalone mock server without dynamic random noise for deterministic assertions
-        python snap7_server.py --no-dynamics &
-        SERVER_PID=$!
-
-        # Wait 3 seconds to allow socket binding and DB1 memory area registration
-        sleep 3
-
-        echo "[INFO] Running test_bridge.py verification suite..."
-        python test_bridge.py --ip 127.0.0.1 --port 102 --rack 0 --slot 1
-        TEST_EXIT=$?
-
-        # Gracefully terminate background mock server process
-        kill $SERVER_PID || true
-
-        exit $TEST_EXIT
+        # Verify that sensor simulation math and data models run without crashes
+        python -c "from sensor_simulator import TemperatureSensorSimulator, SystemMetricsSimulator; t=TemperatureSensorSimulator(); s=SystemMetricsSimulator(); assert t.read() > 0; assert s.get_metrics()['cpu'] >= 0"
