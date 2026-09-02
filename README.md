@@ -175,5 +175,3 @@ This software is distributed under the **GNU Lesser General Public License v3.0 
 * The **Qt Company** & **PyQtGraph team** for modern cross-platform GUI and visualization tooling.
 
 ```
-
----
