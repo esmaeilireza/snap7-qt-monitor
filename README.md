@@ -1,9 +1,12 @@
 # Snap7 Qt Monitor & Diagnostic Station
 
+[![CI & Automated Testing](https://github.com/esmaeilireza/snap7-qt-monitor/actions/workflows/ci.yml/badge.svg)](https://github.com/esmaeilireza/snap7-qt-monitor/actions/workflows/ci.yml)
 [![License: LGPL v3](https://img.shields.io/badge/License-LGPL%20v3-blue.svg)](LICENSE)
 [![Python: 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)]()
 [![Framework: PySide6](https://img.shields.io/badge/Framework-PySide6%20(Qt6)-green.svg)]()
 [![Platform: Windows | Linux](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg)]()
+
+![Snap7 Qt Monitor Live Demo](demo.gif)
 
 A high-performance desktop commissioning workbench and diagnostic HMI for Siemens S7 PLCs, built with **PySide6 (Qt for Python)** and powered by the **Snap7** industrial communication suite.
 
