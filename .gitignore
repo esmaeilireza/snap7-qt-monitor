@@ -1,10 +1,17 @@
-cat << 'EOF' > .gitignore
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Logs
 *.log
+
+# Caches / IDE / Tools
 .ruff_cache/
 .vscode/
 .idea/
-*.json
-EOF
+.attic/
+
+# Local backups
+*.bak
+config_sim_backup.ini
