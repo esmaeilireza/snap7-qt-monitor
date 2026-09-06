@@ -274,7 +274,9 @@ class SimulatedPLC:
                 metrics = self._sys_sim.get_metrics()
                 cpu = metrics["cpu"]
                 ram = metrics["memory"]
-                setpoint = self._temp_sim.setpoint  # use the setpoint from temp sim
+                setpoint = struct.unpack_from(">f", db1, DB1_SETPOINT_OFFSET)[0]
+                if self._temp_sim:
+                    self._temp_sim.set_setpoint(setpoint)
 
                 # Pack into DB1
                 struct.pack_into('>f', db1, DB1_TEMP_OFFSET, float(temp))

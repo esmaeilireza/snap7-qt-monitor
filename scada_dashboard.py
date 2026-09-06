@@ -129,23 +129,35 @@ class PLCWorker(QObject):
         self._running = False
 
     def write_setpoint(self, value: float) -> None:
-        if self._mode == "live" and self._client and self._was_connected:
-            try:
-                self._client.write_real(1, DB1_SETPOINT_OFFSET, value)
-                self.log_message.emit("INFO", "PLC", f"Setpoint written: {value:.1f}°C")
-            except Exception as e:
-                self.log_message.emit("ERROR", "PLC", f"Setpoint write failed: {e}")
-        else:
-            self.temp_sim.set_setpoint(value)
-            self.log_message.emit("INFO", "SIM", f"Simulator setpoint updated: {value:.1f}°C")
+        # The worker thread's event loop is blocked by the polling loop,
+        # so queued slot calls never run. Queue the value and let the
+        # polling loop consume it instead.
+        self._pending_sp = value
+        self.log_message.emit("INFO", "PLC", f"Setpoint queued: {value:.1f}°C")
 
     def run(self) -> None:
         self.log_message.emit("INFO", "WORKER",
                               f"Polling started | Target: {self.ip}:{self.port} (interval {self.poll_interval*1000:.0f}ms)")
 
+        self._pending_sp = None
         while self._running:
             try:
                 is_live = (self._mode == "live" and SNAP7_AVAILABLE and ForkClient is not None)
+
+                # Consume queued setpoint writes (sent from the UI thread)
+                if getattr(self, "_pending_sp", None) is not None:
+                    sp_val = self._pending_sp
+                    self._pending_sp = None
+                    if is_live and self._client and self._was_connected:
+                        try:
+                            self._client.write_real(1, DB1_SETPOINT_OFFSET, sp_val)
+                            self.log_message.emit("INFO", "PLC", f"Setpoint written: {sp_val:.1f}°C")
+                        except Exception as e:
+                            self.log_message.emit("ERROR", "PLC", f"Setpoint write failed: {e}")
+                    else:
+                        if self.temp_sim:
+                            self.temp_sim.set_setpoint(sp_val)
+                            self.log_message.emit("INFO", "SIM", f"Simulator setpoint updated: {sp_val:.1f}°C")
 
                 if is_live:
                     if not self._client:
@@ -372,7 +384,7 @@ def main():
         lambda c, fb: on_connection(window, c, fb, ip, rack, slot, port)
     )
     worker.log_message.connect(window.dashboard_view.logs.log)
-    window.dashboard_view.sim_card.apply_clicked.connect(worker.write_setpoint)
+    window.dashboard_view.sim_card.apply_clicked.connect(worker.write_setpoint, Qt.DirectConnection)
 
     # ---- Connect mode change from UI ----
     window.mode_changed.connect(lambda mode: on_mode_change(worker, mode))

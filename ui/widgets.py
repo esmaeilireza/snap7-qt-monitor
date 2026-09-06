@@ -322,6 +322,8 @@ class SensorSimCard(QFrame):
             pass
 
     def set_setpoint(self, value: float) -> None:
+        if self.sp_input.hasFocus():
+            return
         """Update both input and slider without triggering signals."""
         self.sp_input.blockSignals(True)
         self.slider.blockSignals(True)
